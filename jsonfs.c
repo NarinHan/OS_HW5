@@ -65,6 +65,28 @@ void addChild (FileSystemNode * parent, FileSystemNode * child)
   }
 }
 
+FileSystemNode * findNode (FileSystemNode * node, int inode) 
+{
+  if (node == NULL) {
+    return NULL ;
+  }
+
+  if (node->inode == inode) {
+    return node ;
+  }
+
+  FileSystemNode * child = node->firstChild ;
+  while (child != NULL) {
+    FileSystemNode * result = findNode(child, inode) ;
+    if (result != NULL) {
+      return result ;
+    }
+    child = child->nextSibling ;
+  }
+
+  return NULL ;
+}
+
 // FileType getType (struct json_object * json)
 // {
   
@@ -210,28 +232,6 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
       }
     }
   }
-}
-
-FileSystemNode * findNode (FileSystemNode * node, int inode) 
-{
-  if (node == NULL) {
-    return NULL ;
-  }
-
-  if (node->inode == inode) {
-    return node ;
-  }
-
-  FileSystemNode * child = node->firstChild ;
-  while (child != NULL) {
-    FileSystemNode * result = findNode(child, inode) ;
-    if (result != NULL) {
-      return result ;
-    }
-    child = child->nextSibling ;
-  }
-
-  return NULL ;
 }
 
 void print_fs (FileSystemNode * fs, int level)
