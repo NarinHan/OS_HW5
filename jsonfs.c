@@ -187,6 +187,7 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
 
     struct json_object * entries;
         if (json_object_object_get_ex(obj, "entries", &entries) && json_object_is_type(entries, json_type_array)) {
+            printf("!!!! figuring out entries\n") ;
             json_to_ds(entries, &(temp->firstChild));
         }
   }
