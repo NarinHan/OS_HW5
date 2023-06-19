@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <json.h>
+#include <unistd.h>
 
 
 static const char *filecontent = "I'm the content of the only file available there\n";
@@ -15,13 +16,13 @@ static const char *filecontent = "I'm the content of the only file available the
 static int getattr_callback(const char *path, struct stat *stbuf) {
   memset(stbuf, 0, sizeof(struct stat));
 
-  if (strcmp(path, "/") == 0) {
+  if (strcmp(path, "/") == 0) { // if path == root, declare it as a directory and return
     stbuf->st_mode = S_IFDIR | 0755;
     stbuf->st_nlink = 2;
     return 0;
   }
 
-  if (strcmp(path, "/file") == 0) {
+  if (strcmp(path, "/file") == 0) { // if path == /file, declare it as a file and explicit its size and return
     stbuf->st_mode = S_IFREG | 0777;
     stbuf->st_nlink = 1;
     stbuf->st_size = strlen(filecontent);
@@ -106,7 +107,26 @@ void print_json (struct json_object * json)
 
 int main(int argc, char *argv[])
 {
-	struct json_object * fs_json = json_object_from_file("fs.json") ; 
+  char *filename = NULL ;
+  if (argc < 2) {
+    printf("Name of a JSON file is required!\n") ;
+    return 1 ;
+  } else {
+    filename = (char *)malloc(strlen(argv[1]) + 1) ;
+    if (filename == NULL) {
+      printf("Memory allocation failed.\n") ;
+      return 1 ;
+    }
+    memcpy(filename, argv[1], strlen(argv[1]) + 1) ;
+  }
+
+	struct json_object * fs_json = json_object_from_file(filename) ;
+  if (fs_json == NULL) {
+    printf("Failed to load JSON file: %s\n", filename) ;
+    free(filename) ;
+    return 1 ;
+  }
+
 	print_json(fs_json) ;
 	json_object_put(fs_json) ;
 
