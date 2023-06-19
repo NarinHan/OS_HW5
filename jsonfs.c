@@ -143,11 +143,11 @@ static struct fuse_operations fuse_example_operations = {
   .readdir = readdir_callback,
 };
 
-void json_to_ds (struct json_object * json, FileSystemNode * fs) 
+void json_to_ds (struct json_object * json, FileSystemNode ** fs) 
 {
   int n = json_object_array_length(json);
 
-	for ( int i = 0 ; i < n ; i++ ) {
+	for (int i = 0 ; i < n ; i++) {
 		struct json_object * obj = json_object_array_get_idx(json, i);
     int inode ;
     FileType type ;
@@ -170,6 +170,10 @@ void json_to_ds (struct json_object * json, FileSystemNode * fs)
         }
       }
 
+      if (strcmp(key, "entries") == 0) {
+				printf("   # entries: %d\n", json_object_array_length(val)) ;
+      }
+
 			if (strcmp(key, "name" ) == 0) {
         printf("name = %s\n", (char *) json_object_get_string(val)) ;
 				memcpy(name, (char *) json_object_get_string(val), strlen((char *) json_object_get_string(val)) + 1) ;
@@ -180,8 +184,19 @@ void json_to_ds (struct json_object * json, FileSystemNode * fs)
 				memcpy(data, (char *) json_object_get_string(val), strlen((char *) json_object_get_string(val)) + 1) ;  
       }
 		}
+
     FileSystemNode * temp = createNode(inode, type, name, data) ;
-    addChild(fs, temp) ;
+    if (*fs == NULL) {
+      *fs = temp ;
+    } 
+    else {
+      addChild(*fs, temp) ;
+    }
+
+    struct json_object * entries;
+        if (json_object_object_get_ex(obj, "entries", &entries) && json_object_is_type(entries, json_type_array)) {
+            json_to_ds(entries, &(temp->firstChild));
+        }
   }
 }
 
