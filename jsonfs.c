@@ -154,11 +154,14 @@ void json_to_ds (struct json_object * json, FileSystemNode * fs)
     char name[MAX_DATA_LENGTH] = "", data[MAX_DATA_LENGTH] = "" ;
     
     json_object_object_foreach(obj, key, val) {  
-      if (strcmp(key, "inode") == 0) 
+      if (strcmp(key, "inode") == 0) {
 				inode = (int) json_object_get_int(val) ;
+        printf("inode = %d\n", inode) ;
+      }
 
 			if (strcmp(key, "type") == 0) {
         const char * typeString = (char *) json_object_get_string(val) ;
+        printf("typeString = %s\n", typeString) ;
         if (strcmp(typeString, "dir") == 0) {
           type = DIRECTORY ;
         }
@@ -167,16 +170,19 @@ void json_to_ds (struct json_object * json, FileSystemNode * fs)
         }
       }
 
-			if (strcmp(key, "name" ) == 0)
+			if (strcmp(key, "name" ) == 0) {
+        printf("name = %s\n", (char *) json_object_get_string(val)) ;
 				memcpy(name, (char *) json_object_get_string(val), strlen((char *) json_object_get_string(val)) + 1) ;
+      }
 			
-			if (strcmp(key, "data" ) == 0)
+			if (strcmp(key, "data" ) == 0) {
+        printf("data = %s\n", (char *) json_object_get_string(val)) ;
 				memcpy(data, (char *) json_object_get_string(val), strlen((char *) json_object_get_string(val)) + 1) ;  
+      }
 		}
     FileSystemNode * temp = createNode(inode, type, name, data) ;
     addChild(fs, temp) ;
   }
-
 }
 
 void print_fs (FileSystemNode * fs, int level)
