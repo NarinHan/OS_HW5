@@ -200,11 +200,11 @@ void print_fs (FileSystemNode * fs, int level)
   for (int i = 0; i < level; i++) {
     printf("  ") ;
   }
-  printf("Name: %s\n", fs->name) ;
+  printf("Inode: %d\n", fs->inode) ;
   for (int i = 0; i < level; i++) {
     printf("  ") ;
   }
-  printf("Inode: %d\n", fs->inode) ;
+  printf("Name: %s\n", fs->name) ;
   for (int i = 0; i < level; i++) {
     printf("  ") ;
   }
@@ -217,11 +217,8 @@ void print_fs (FileSystemNode * fs, int level)
   }
 
 	// Print the children recursively
-  FileSystemNode * child = fs->firstChild ;
-  while (child != NULL) {
-      print_fs(child, level + 1) ;
-      child = child->nextSibling ;
-  }
+  print_fs(fs->firstChild, level + 1) ;
+  print_fs(fs->nextSibling, level) ;
 }
 
 void print_json (struct json_object * json) 
