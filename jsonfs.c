@@ -230,25 +230,27 @@ void print_json (struct json_object * json)
 
 int main(int argc, char *argv[])
 {
-  char *filename = NULL ;
-  if (argc < 2) {
-    printf("Name of a JSON file is required!\n") ;
-    return 1 ;
-  } else {
-    filename = (char *)malloc(strlen(argv[1]) + 1) ;
-    if (filename == NULL) {
-      printf("Memory allocation failed.\n") ;
-      return 1 ;
-    }
-    memcpy(filename, argv[1], strlen(argv[1]) + 1) ;
-  }
+  // char *filename = NULL ;
+  // if (argc < 2) {
+  //   printf("Name of a JSON file is required!\n") ;
+  //   return 1 ;
+  // } else {
+  //   filename = (char *)malloc(strlen(argv[1]) + 1) ;
+  //   if (filename == NULL) {
+  //     printf("Memory allocation failed.\n") ;
+  //     return 1 ;
+  //   }
+  //   memcpy(filename, argv[1], strlen(argv[1]) + 1) ;
+  // }
 
-	struct json_object * fs_json = json_object_from_file(filename) ;
-  if (fs_json == NULL) {
-    printf("Failed to load JSON file: %s\n", filename) ;
-    free(filename) ;
-    return 1 ;
-  }
+	// struct json_object * fs_json = json_object_from_file(filename) ;
+  // if (fs_json == NULL) {
+  //   printf("Failed to load JSON file: %s\n", filename) ;
+  //   free(filename) ;
+  //   return 1 ;
+  // }
+
+  struct json_object * fs_json = json_object_from_file("fs.json") ; 
 
   FileSystemNode * fs = NULL ;
   json_to_ds(fs_json, fs) ;
