@@ -156,12 +156,10 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
     json_object_object_foreach(obj, key, val) {  
       if (strcmp(key, "inode") == 0) {
 				inode = (int) json_object_get_int(val) ;
-        printf("inode = %d\n", inode) ;
       }
 
 			if (strcmp(key, "type") == 0) {
         const char * typeString = (char *) json_object_get_string(val) ;
-        printf("typeString = %s\n", typeString) ;
         if (strcmp(typeString, "dir") == 0) {
           type = DIRECTORY ;
         }
@@ -170,17 +168,11 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
         }
       }
 
-      if (strcmp(key, "entries") == 0) {
-				printf("   # entries: %d\n", json_object_array_length(val)) ;
-      }
-
 			if (strcmp(key, "name" ) == 0) {
-        printf("name = %s\n", (char *) json_object_get_string(val)) ;
 				memcpy(name, (char *) json_object_get_string(val), strlen((char *) json_object_get_string(val)) + 1) ;
       }
 			
 			if (strcmp(key, "data" ) == 0) {
-        printf("data = %s\n", (char *) json_object_get_string(val)) ;
 				memcpy(data, (char *) json_object_get_string(val), strlen((char *) json_object_get_string(val)) + 1) ;  
       }
 		}
@@ -205,9 +197,7 @@ void print_fs (FileSystemNode * fs, int level)
   if (fs == NULL)
     return ;
 
-  for (int i = 0; i < level; i++) {
-    printf("  ") ;
-  }
+  printf("Level: %d\n", level) ;
   printf("Name: %s\n", fs->name) ;
   printf("Inode: %d\n", fs->inode) ;
   printf("Type: %s\n", fs->type == DIRECTORY ? "Directory" : "Regular File") ;
