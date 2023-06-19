@@ -197,12 +197,23 @@ void print_fs (FileSystemNode * fs, int level)
   if (fs == NULL)
     return ;
 
-  printf("Level: %d\n", level) ;
+  for (int i = 0; i < level; i++) {
+    printf("  ") ;
+  }
   printf("Name: %s\n", fs->name) ;
+  for (int i = 0; i < level; i++) {
+    printf("  ") ;
+  }
   printf("Inode: %d\n", fs->inode) ;
+  for (int i = 0; i < level; i++) {
+    printf("  ") ;
+  }
   printf("Type: %s\n", fs->type == DIRECTORY ? "Directory" : "Regular File") ;
   if (fs->type == REGULAR_FILE) {
-        printf("Data: %s\n", fs->data) ;
+    for (int i = 0; i < level; i++) {
+      printf("  ") ;
+    }
+    printf("Data: %s\n", fs->data) ;
   }
 
 	// Print the children recursively
