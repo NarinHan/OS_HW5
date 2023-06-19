@@ -23,8 +23,8 @@ typedef struct _FileSystemNode {
   FileType type ;
   char name[MAX_DATA_LENGTH] ;
   char data[MAX_DATA_LENGTH] ;
-  FileSystemNode * firstChild ;
-  FileSystemNode * nextSibling ;
+  struct _FileSystemNode * firstChild ;
+  struct _FileSystemNode * nextSibling ;
 } FileSystemNode ;
 
 FileSystemNode * createNode (int inode, FileType type, char * name, char * data) 
@@ -38,7 +38,7 @@ FileSystemNode * createNode (int inode, FileType type, char * name, char * data)
       memcpy(newNode->data, data, strlen(data) + 1) ;
     }
     else {
-      newNode->data = "" ;
+      newNode->data[0] = "\0" ;
     }
     newNode->firstChild = NULL ;
     newNode->nextSibling = NULL ;
@@ -65,10 +65,10 @@ void addChild (FileSystemNode * parent, FileSystemNode * child)
   }
 }
 
-FileType getType (struct json_object * json)
-{
+// FileType getType (struct json_object * json)
+// {
   
-}
+// }
 
 
 static const char *filecontent = "I'm the content of the only file available there\n";
@@ -181,7 +181,7 @@ void json_to_ds (struct json_object * json, FileSystemNode * fs)
 
 void print_fs (FileSystemNode * fs, int level)
 {
-  if (fs == NULl)
+  if (fs == NULL)
     return ;
 
   for (int i = 0; i < level; i++) {
@@ -190,7 +190,7 @@ void print_fs (FileSystemNode * fs, int level)
   printf("Name: %s\n", fs->name) ;
   printf("Inode: %d\n", fs->inode) ;
   printf("Type: %s\n", fs->type == DIRECTORY ? "Directory" : "Regular File") ;
-  if (node->type == REGULAR_FILE) {
+  if (fs->type == REGULAR_FILE) {
         printf("Data: %s\n", fs->data) ;
   }
 
