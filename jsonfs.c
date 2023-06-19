@@ -225,8 +225,8 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
       int m = json_object_array_length(entries) ;
       for (int j = 0; j < m; j++) {
         struct json_object * entry = json_object_array_get_idx(entries, j) ;
-        char * entryName = json_object_get_string(json_object_object_get(entry, "name")) ;
-        int entryInode = json_object_get_int(json_object_object_get(entry, "inode")) ;
+        char * entryName = (char *) json_object_get_string(json_object_object_get(entry, "name")) ;
+        int entryInode = (int) json_object_get_int(json_object_object_get(entry, "inode")) ;
         FileSystemNode * entryNode = createNode(entryInode, DIRECTORY, entryName, "") ;
         addChild(temp, entryNode) ;
       }
