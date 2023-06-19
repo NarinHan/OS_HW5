@@ -214,7 +214,7 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
         if (type == REGULAR_FILE) {
           memcpy(existingNode->data, data, strlen(data) + 1) ;
         }
-        free(temp) ;
+        // free(temp) ;
       } else {
           addChild(*fs, temp) ;
       }
@@ -224,7 +224,7 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
     if (json_object_object_get_ex(obj, "entries", &entries) && json_object_is_type(entries, json_type_array)) {
       int m = json_object_array_length(entries) ;
       for (int j = 0; j < m; j++) {
-        struct json_object * entry = json_object_array_get_idx(entries, i) ;
+        struct json_object * entry = json_object_array_get_idx(entries, j) ;
         char * entryName = json_object_get_string(json_object_object_get(entry, "name")) ;
         int entryInode = json_object_get_int(json_object_object_get(entry, "inode")) ;
         FileSystemNode * entryNode = createNode(entryInode, DIRECTORY, entryName, "") ;
