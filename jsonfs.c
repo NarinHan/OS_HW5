@@ -187,19 +187,18 @@ void print_fs (FileSystemNode * fs, int level)
   for (int i = 0; i < level; i++) {
     printf("  ") ;
   }
-
-  printf("Name: %s\n", node->name);
-  printf("Inode: %d\n", node->inode);
-  printf("Type: %s\n", node->type == DIRECTORY ? "Directory" : "Regular File");
+  printf("Name: %s\n", fs->name) ;
+  printf("Inode: %d\n", fs->inode) ;
+  printf("Type: %s\n", fs->type == DIRECTORY ? "Directory" : "Regular File") ;
   if (node->type == REGULAR_FILE) {
-        printf("Data: %s\n", node->data);
+        printf("Data: %s\n", fs->data) ;
   }
 
 	// Print the children recursively
-  FileSystemNode* child = node->firstChild;
+  FileSystemNode * child = fs->firstChild ;
   while (child != NULL) {
-      print_fs(child, level + 1);
-      child = child->nextSibling;
+      print_fs(child, level + 1) ;
+      child = child->nextSibling ;
   }
 }
 
