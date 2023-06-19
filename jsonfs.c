@@ -156,6 +156,9 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
     json_object_object_foreach(obj, key, val) {  
       if (strcmp(key, "inode") == 0) {
 				inode = (int) json_object_get_int(val) ;
+        if (inode == 0) {
+          memcpy(name, "root", strlen("root") + 1) ;
+        }
       }
 
 			if (strcmp(key, "type") == 0) {
@@ -182,15 +185,53 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
       *fs = temp ;
     } 
     else {
-      addChild(*fs, temp) ;
+      FileSystemNode * existingNode = findNode(*fs, inode) ;
+      if (existingNode != NULL) {
+        existingNode->type = type ;
+        memcpy(existingNode->name, name, strlen(name) + 1) ;
+        if (type == REGULAR_FILE) {
+          memcpy(existingNode->data, data, strlen(data) + 1) ;
+        }
+        free(temp) ;
+      } else {
+          addChild(*fs, temp) ;
+      }
     }
 
     struct json_object * entries;
-        if (json_object_object_get_ex(obj, "entries", &entries) && json_object_is_type(entries, json_type_array)) {
-            printf("!!!! figuring out entries\n") ;
-            json_to_ds(entries, &(temp->firstChild));
-        }
+    if (json_object_object_get_ex(obj, "entries", &entries) && json_object_is_type(entries, json_type_array)) {
+      int m = json_object_array_length(entries) ;
+      for (int j = 0; j < m; j++) {
+        struct json_object * entry = json_object_array_get_idx(entries, i) ;
+        char * entryName = json_object_get_string(json_object_object_get(entry, "name")) ;
+        int entryInode = json_object_get_int(json_object_object_get(entry, "inode")) ;
+        FileSystemNode * entryNode = createNode(entryInode, DIRECTORY, entryName, "") ;
+        addChild(temp, entryNode) ;
+      }
+    }
   }
+}
+
+FileSystemNode * findNode (FileSystemNode * node, int inode) 
+{
+  if (node == NULL) {
+    return NULL ;
+  }
+
+  if (node->inode == inode) {
+    return node ;
+  }
+
+  FileSystemNode * child = node->firstChild ;
+  while (child != NULL) {
+    FileSystemNode * result = findNode(child, inode) ;
+    if (result != NULL) {
+      return result ;
+    }
+    child = child->nextSibling ;
+  }
+
+  return NULL ;
 }
 
 void print_fs (FileSystemNode * fs, int level)
