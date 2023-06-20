@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <unistd.h>
 
+#define MAX_NAME_LENGTH 50
 #define MAX_DATA_LENGTH 4098
 
 typedef enum _FileType {
@@ -21,7 +22,7 @@ typedef enum _FileType {
 typedef struct _FileSystemNode {
   int inode ;
   FileType type ;
-  char name[MAX_DATA_LENGTH] ;
+  char name[MAX_NAME_LENGTH] ;
   char data[MAX_DATA_LENGTH] ;
   struct _FileSystemNode * parent ;
   struct _FileSystemNode * firstChild ;
@@ -37,10 +38,10 @@ FileSystemNode * createNode (int inode, FileType type, char * name, char * data)
     newNode->inode = inode ;
     newNode->type = type ;
     // memcpy(newNode->name, name, strlen(name) + 1) ;
-    strncpy(newNode->name, name, sizeof(name)) ;
+    strncpy(newNode->name, name, MAX_NAME_LENGTH) ;
     if (type == REGULAR_FILE) {
       // memcpy(newNode->data, data, strlen(data) + 1) ;
-      strncpy(newNode->data, data, sizeof(data)) ;
+      strncpy(newNode->data, data, MAX_DATA_LENGTH) ;
     } else {
       newNode->data[0] = "\0" ;
     }
@@ -136,7 +137,7 @@ FileSystemNode * json_to_ds (struct json_object * json)
       if (dataJson != NULL && json_object_is_type(dataJson, json_type_string)) {
         // memcpy(node->data, json_object_get_string(dataJson), strlen(json_object_get_string(dataJson)) + 1) ;
         char * dataStr = json_object_get_string(dataJson) ;
-        strncpy(node->data, dataStr, sizeof(dataStr)) ;
+        strncpy(node->data, dataStr, MAX_DATA_LENGTH) ;
       }
     }
 
