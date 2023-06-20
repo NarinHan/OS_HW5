@@ -21,7 +21,7 @@ typedef enum _FileType {
 
 typedef struct _FileSystemNode {
   int inode ;
-  FileType type ;
+  FileType fileType ;
   char name[MAX_NAME_LENGTH] ;
   char data[MAX_DATA_LENGTH] ;
   struct _FileSystemNode * parent ;
@@ -30,200 +30,152 @@ typedef struct _FileSystemNode {
   int visited ;
 } FileSystemNode ;
 
-FileSystemNode * createNode (int inode, FileType type, char * name, char * data) 
-{
-  FileSystemNode * newNode = (FileSystemNode *)malloc(sizeof(FileSystemNode)) ;
-  
-  if (newNode != NULL) {
-    newNode->inode = inode ;
-    newNode->type = type ;
-    // memcpy(newNode->name, name, strlen(name) + 1) ;
-    strncpy(newNode->name, name, MAX_NAME_LENGTH) ;
-    if (type == REGULAR_FILE) {
-      // memcpy(newNode->data, data, strlen(data) + 1) ;
-      strncpy(newNode->data, data, MAX_DATA_LENGTH) ;
+FileSystemNode* createNode(int inode, const char* name, FileType fileType, const char* data) {
+    FileSystemNode* newNode = (FileSystemNode*)malloc(sizeof(FileSystemNode));
+    newNode->inode = inode;
+    strncpy(newNode->name, name, MAX_NAME_LENGTH);
+    newNode->fileType = fileType;
+    strncpy(newNode->data, data, MAX_DATA_LENGTH);
+    newNode->parent = NULL;
+    newNode->firstChild = NULL;
+    newNode->nextSibling = NULL;
+    newNode->visited = 0; // Initialize visited flag to 0
+    return newNode;
+}
+
+void addChild(FileSystemNode* parent, FileSystemNode* child) {
+    child->parent = parent;
+    if (parent->firstChild == NULL) {
+        parent->firstChild = child;
     } else {
-      newNode->data[0] = "\0" ;
-    }
-    newNode->parent = NULL ;
-    newNode->firstChild = NULL ;
-    newNode->nextSibling = NULL ;
-    newNode->visited = 0 ;
-  }
-
-  return newNode ;
-}
-
-void addChild (FileSystemNode * parent, FileSystemNode * child) 
-{
-  if (parent == NULL || child == NULL) {
-    return ;
-  }
-
-  child->parent = parent ;
-  if (parent->firstChild == NULL) {
-    parent->firstChild = child ;
-  } else {
-    FileSystemNode * sibling = parent->firstChild ;
-    while (sibling->nextSibling != NULL) {
-      sibling = sibling->nextSibling ;
-    }
-    sibling->nextSibling = child ;
-  }
-}
-
-FileSystemNode * findNode (FileSystemNode * node, int inode) 
-{
-  if (node == NULL) {
-    return NULL ;
-  }
-
-  if (node->inode == inode) {
-    return node ;
-  }
-
-  FileSystemNode * child = node->firstChild ;
-  while (child != NULL) {
-    FileSystemNode * result = findNode(child, inode) ;
-    if (result != NULL) {
-      return result ;
-    }
-    child = child->nextSibling ;
-  }
-
-  return NULL ;
-}
-
-// FileType getType (struct json_object * json)
-// {
-  
-// }
-
-FileSystemNode * json_to_ds (struct json_object * json) 
-{
-  int n = json_object_array_length(json);
-  FileSystemNode ** nodeMap = (FileSystemNode **)malloc(n * sizeof(FileSystemNode *)) ;
-
-  // create nodes
-	for (int i = 0 ; i < n ; i++) {
-		struct json_object * nodeJson = json_object_array_get_idx(json, i);
-
-    json_object * inodeJson = NULL ;
-    json_object * typeJson = NULL ;
-    json_object_object_get_ex(nodeJson, "inode", &inodeJson) ;
-    json_object_object_get_ex(nodeJson, "type", &typeJson) ;
-
-    if (inodeJson == NULL || typeJson == NULL) {
-      continue ;
-    }
-
-    int inode = json_object_get_int(inodeJson) ;
-    char * typeStr = json_object_get_string(typeJson) ;
-
-    FileType type ;
-    if (strcmp(typeStr, "dir") == 0) {
-      type = DIRECTORY ;
-    } else if (strcmp(typeStr, "reg") == 0) {
-      type = REGULAR_FILE ;
-    } else {
-      continue ;
-    }
-
-    FileSystemNode * node = createNode(inode, type, "", "") ;
-
-    if (type == REGULAR_FILE) {
-      json_object * dataJson = NULL ;
-      json_object_object_get_ex(nodeJson, "data", &dataJson) ;
-      if (dataJson != NULL && json_object_is_type(dataJson, json_type_string)) {
-        // memcpy(node->data, json_object_get_string(dataJson), strlen(json_object_get_string(dataJson)) + 1) ;
-        char * dataStr = json_object_get_string(dataJson) ;
-        strncpy(node->data, dataStr, MAX_DATA_LENGTH) ;
-      }
-    }
-
-    nodeMap[inode] = node ;
-  }
-
-  // build tree structure
-  for (int i = 0; i < n; i++) {
-    FileSystemNode * node = nodeMap[i] ;
-
-    if (node == NULL) {
-      continue ;
-    }
-
-    json_object * entriesJson = json_object_object_get(json_object_array_get_idx(json, i), "entries") ;
-    if (entriesJson == NULL || !json_object_is_type(entriesJson, json_type_array)) {
-      continue ;
-    }
-
-    int m = json_object_array_length(entriesJson) ;
-    for (int j = 0; j < m; j++) {
-      json_object * entryJson = json_object_array_get_idx(entryJson, j) ;
-      if (entryJson == NULL || !json_object_is_type(entryJson, json_type_object)) {
-        continue ;
-      }
-
-      json_object* nameJson = NULL ;
-      json_object* inodeJson = NULL ;
-      json_object_object_get_ex(entryJson, "name", &nameJson);
-      json_object_object_get_ex(entryJson, "inode", &inodeJson);
-
-      char * name = json_object_get_string(nameJson) ;    
-      int inode = json_object_get_int(inodeJson) ;   
-
-
-      if (nameJson == NULL || inodeJson == NULL) {
-          continue;
-      }
-
-      FileSystemNode * child = nodeMap[inode] ;
-      if (child != NULL) {
-        // memcpy(child->name, name, strlen(name) + 1) ;
-        strncpy(child->name, name, strlen(name)) ;
-        if (!child->visited && child != node) { // to prevent circular references
-          addChild(node, child) ;
-          child->visited = 1 ;
+        FileSystemNode* sibling = parent->firstChild;
+        while (sibling->nextSibling != NULL) {
+            sibling = sibling->nextSibling;
         }
-      }
+        sibling->nextSibling = child;
     }
-  }
+}
 
-  FileSystemNode * root = nodeMap[0] ;
-  free(nodeMap) ;
+FileSystemNode* parseFileSystem(json_object* json) {
+    if (json == NULL || !json_object_is_type(json, json_type_array)) {
+        return NULL;
+    }
 
-  return root ;
+    const int numNodes = json_object_array_length(json);
+    FileSystemNode** nodeMap = (FileSystemNode**)malloc(numNodes * sizeof(FileSystemNode*));
+
+    for (int i = 0; i < numNodes; i++) {
+        json_object* nodeJson = json_object_array_get_idx(json, i);
+        if (nodeJson == NULL || !json_object_is_type(nodeJson, json_type_object)) {
+            continue;
+        }
+
+        json_object* inodeJson = json_object_object_get(nodeJson, "inode");
+        json_object* typeJson = json_object_object_get(nodeJson, "type");
+
+        if (inodeJson == NULL || typeJson == NULL) {
+            continue;
+        }
+
+        const int inode = json_object_get_int(inodeJson);
+        const char* typeStr = json_object_get_string(typeJson);
+
+        FileType fileType;
+        if (strcmp(typeStr, "dir") == 0) {
+            fileType = DIRECTORY;
+        } else if (strcmp(typeStr, "reg") == 0) {
+            fileType = REGULAR_FILE;
+        } else {
+            continue;
+        }
+
+        FileSystemNode* node = createNode(inode, "", fileType, "");
+
+        if (fileType == REGULAR_FILE) {
+            json_object* dataJson = json_object_object_get(nodeJson, "data");
+            if (dataJson != NULL && json_object_is_type(dataJson, json_type_string)) {
+                strncpy(node->data, json_object_get_string(dataJson), MAX_DATA_LENGTH);
+            }
+        }
+
+        nodeMap[inode] = node;
+    }
+
+    for (int i = 0; i < numNodes; i++) {
+        FileSystemNode* node = nodeMap[i];
+        if (node == NULL) {
+            continue;
+        }
+
+        json_object* entriesJson = json_object_object_get(json_object_array_get_idx(json, i), "entries");
+        if (entriesJson == NULL || !json_object_is_type(entriesJson, json_type_array)) {
+            continue;
+        }
+
+        const int numEntries = json_object_array_length(entriesJson);
+        for (int j = 0; j < numEntries; j++) {
+            json_object* entryJson = json_object_array_get_idx(entriesJson, j);
+            if (entryJson == NULL || !json_object_is_type(entryJson, json_type_object)) {
+                continue;
+            }
+
+            json_object* nameJson = json_object_object_get(entryJson, "name");
+            json_object* inodeJson = json_object_object_get(entryJson, "inode");
+
+            if (nameJson == NULL || inodeJson == NULL) {
+                continue;
+            }
+
+            const char* name = json_object_get_string(nameJson);
+            const int inode = json_object_get_int(inodeJson);
+
+            FileSystemNode* child = nodeMap[inode];
+            if (child != NULL) {
+                strncpy(child->name, name, MAX_NAME_LENGTH);
+                // Prevent circular references
+                if (!child->visited && child != node) {
+                    addChild(node, child);
+                    child->visited = 1; // Mark as visited
+                }
+            }
+        }
+    }
+
+    FileSystemNode* root = nodeMap[0];
+    free(nodeMap);
+
+    return root;
 }
 
 // Display the file system tree recursively
-void print_fs (FileSystemNode * node, int depth) {
-  for (int i = 0; i < depth; i++) {
-      printf("  ");
-  }
-  printf("|__%s\n", node->name);
+void displayFileSystem(FileSystemNode* node, int depth) {
+    int i;
+    for (i = 0; i < depth; i++) {
+        printf("  ");
+    }
+    printf("|__%s\n", node->name);
 
-  if (node->type == DIRECTORY) {
-      FileSystemNode * child = node->firstChild;
-      while (child != NULL) {
-          print_fs(child, depth + 1);
-          child = child->nextSibling;
-      }
-  }
-}
-
-void freeFileSystem (FileSystemNode* node) 
-{
-  if (node != NULL) {
-    if (node->type == DIRECTORY) {
-        FileSystemNode * child = node->firstChild ;
+    if (node->fileType == DIRECTORY) {
+        FileSystemNode* child = node->firstChild;
         while (child != NULL) {
-            FileSystemNode * nextSibling = child->nextSibling;
-            freeFileSystem(child);
-            child = nextSibling;
+            displayFileSystem(child, depth + 1);
+            child = child->nextSibling;
         }
     }
-    free(node);
-  }
+}
+
+void freeFileSystem(FileSystemNode* node) {
+    if (node != NULL) {
+        if (node->fileType == DIRECTORY) {
+            FileSystemNode* child = node->firstChild;
+            while (child != NULL) {
+                FileSystemNode* nextSibling = child->nextSibling;
+                freeFileSystem(child);
+                child = nextSibling;
+            }
+        }
+        free(node);
+    }
 }
 
 // void print_fs (FileSystemNode * fs, int level)
@@ -377,11 +329,12 @@ int main(int argc, char *argv[])
 
   struct json_object * fs_json = json_object_from_file("fs.json") ; 
 
-  FileSystemNode * root = json_to_ds(fs_json) ;
-  print_fs(root, 0) ;
+  FileSystemNode * root = parseFileSystem(fs_json) ;
 	
   // print_json(fs_json) ;
 	json_object_put(fs_json) ;
+
+  displayFileSystem(root, 0) ;
 
   // freeFileSystem(root) ;
 
