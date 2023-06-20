@@ -255,26 +255,23 @@ FileSystemNode *getNodeFromPath(const char * path)
   return currentNode ;
 }
 
-FileSystemNode * createFileNode (const char* fileName) 
+FileSystemNode * createFileNode (const char * path, mode_t mode) 
 {
   FileSystemNode* newNode = (FileSystemNode *)malloc(sizeof(FileSystemNode)) ;
   if (newNode == NULL) {
-    fprintf(stderr, "Failed to allocate memory for FileSystemNode\n") ;
     return NULL;
   }
 
   newNode->inode = ++numNodes ;
-  newNode->type = DIRECTORY ;
-  strncpy(newNode->name, fileName, MAX_NAME_LENGTH - 1);
+  newNode->type = (S_ISDIR(mode)) ? DIRECTORY : REGULAR_FILE ;
+  strncpy(newNode->name, path, MAX_NAME_LENGTH - 1);
   newNode->name[MAX_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
   newNode->data[0] = '\0';
 
-  // Set the parent, firstChild, and nextSibling pointers to NULL
   newNode->parent = NULL;
   newNode->firstChild = NULL;
   newNode->nextSibling = NULL;
 
-  // Set the visited flag to 0 (or any desired initial value)
   newNode->visited = 0;
 
   return newNode;
