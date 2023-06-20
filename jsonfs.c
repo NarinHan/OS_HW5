@@ -32,6 +32,7 @@ typedef struct _FileSystemNode {
 } FileSystemNode ;
 
 FileSystemNode * root ;
+int numNodes ;
 
 FileSystemNode * createNode(int inode, FileType type, char * name, char * data)
 {
@@ -71,6 +72,7 @@ FileSystemNode * json_to_ds (json_object * json)
   }
 
   int n = json_object_array_length(json) ;
+  numNodes = n ;
   FileSystemNode ** nodeMap = (FileSystemNode **)malloc(n * sizeof(FileSystemNode *)) ;
 
   for (int i = 0; i < n; i++) {
@@ -253,7 +255,31 @@ FileSystemNode *getNodeFromPath(const char * path)
   return currentNode ;
 }
 
-static const char *filecontent = "I'm the content of the only file available there\n";
+FileSystemNode * createFileNode (const char* fileName) 
+{
+  FileSystemNode* newNode = (FileSystemNode *)malloc(sizeof(FileSystemNode)) ;
+  if (newNode == NULL) {
+    fprintf(stderr, "Failed to allocate memory for FileSystemNode\n") ;
+    return NULL;
+  }
+
+  newNode->inode = ++numNodes ;
+  newNode->type = DIRECTORY ;
+  strncpy(newNode->name, fileName, MAX_NAME_LENGTH - 1);
+  newNode->name[MAX_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
+  newNode->data[0] = '\0';
+
+  // Set the parent, firstChild, and nextSibling pointers to NULL
+  newNode->parent = NULL;
+  newNode->firstChild = NULL;
+  newNode->nextSibling = NULL;
+
+  // Set the visited flag to 0 (or any desired initial value)
+  newNode->visited = 0;
+
+  return newNode;
+}
+
 
 // reading metadata of a given path
 static int getattr_callback(const char *path, struct stat *stbuf)
@@ -380,6 +406,8 @@ static struct fuse_operations fuse_example_operations = {
     .open = open_callback,
     .read = read_callback,
     .readdir = readdir_callback,
+    .create = create_callback,
+    .write = write_callback,
 } ;
 
 int main(int argc, char *argv[])
