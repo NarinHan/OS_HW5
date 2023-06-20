@@ -13,6 +13,8 @@
 #define MAX_NAME_LENGTH 50
 #define MAX_DATA_LENGTH 4098
 
+FileSystemNode * root ;
+
 typedef enum _FileType {
   DIRECTORY,
   REGULAR_FILE
@@ -216,7 +218,7 @@ void print_json(struct json_object * json)
 
 FileSystemNode *getNodeFromPath(const char * path) 
 {
-  FileSystemNode *currentNode = root ;
+  FileSystemNode * currentNode = root ;
   if (path[0] == '/') {
     path++ ;
   }
@@ -360,8 +362,7 @@ int main(int argc, char *argv[])
   // }
 
   struct json_object * fs_json = json_object_from_file("fs.json") ;
-
-  FileSystemNode * root = json_to_ds(fs_json) ;
+  root = json_to_ds(fs_json) ;
 
   // print_json(fs_json) ;
   json_object_put(fs_json) ;
