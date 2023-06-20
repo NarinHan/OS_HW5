@@ -106,10 +106,6 @@ FileSystemNode * json_to_ds (struct json_object * json)
   // create nodes
 	for (int i = 0 ; i < n ; i++) {
 		struct json_object * nodeJson = json_object_array_get_idx(json, i);
-    int inode ;
-    FileType type ;
-    char name[MAX_DATA_LENGTH] = "" ;
-    char data[MAX_DATA_LENGTH] = "" ;
 
     json_object * inodeJson = NULL ;
     json_object * typeJson = NULL ;
@@ -132,7 +128,7 @@ FileSystemNode * json_to_ds (struct json_object * json)
       continue ;
     }
 
-    FileSystemNode * node = createNode(inode, "", type, "") ;
+    FileSystemNode * node = createNode(inode, type, "", "") ;
 
     if (type == REGULAR_FILE) {
       json_object * dataJson = NULL ;
