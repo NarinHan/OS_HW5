@@ -132,7 +132,7 @@ FileSystemNode * json_to_ds (json_object * json)
       json_object * nameJson = NULL ; 
       json_object * inodeJson = NULL ;
       json_object_object_get_ex(entryJson, "name", &nameJson) ;
-      json_object_object_get(entryJson, "inode", &inodeJson) ;
+      json_object_object_get_ex(entryJson, "inode", &inodeJson) ;
 
       if (nameJson == NULL || inodeJson == NULL) {
         continue ;
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 
   displayFileSystem(root, 0) ;
 
-  freeFileSystem(root) ;
+  // freeFileSystem(root) ;
 
   return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }
