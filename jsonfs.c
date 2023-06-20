@@ -80,7 +80,7 @@ FileSystemNode * json_to_ds (json_object * json)
     json_object * inodeJson = NULL ;
     json_object * typeJson = NULL ;    
     json_object_object_get_ex(nodeJson, "inode", &inodeJson) ;
-    json_object_object_get(nodeJson, "type", &typeJson) ;
+    json_object_object_get_ex(nodeJson, "type", &typeJson) ;
 
     if (inodeJson == NULL || typeJson == NULL) {
       continue ;
