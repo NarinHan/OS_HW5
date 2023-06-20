@@ -247,7 +247,7 @@ void print_fs (FileSystemNode * fs, int depth) {
   if (fs->type == DIRECTORY) {
       FileSystemNode * child = fs->firstChild;
       while (child != NULL) {
-          displayFileSystem(child, depth + 1);
+          print_fs(child, depth + 1);
           child = child->nextSibling;
       }
   }
