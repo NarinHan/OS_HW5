@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
   char * fuse_argv[2] ;
 
   fuse_argv[0] = argv[0] ;
-  fuse_argv[2] = MOUNT_DIR ;
+  fuse_argv[1] = MOUNT_DIR ;
 
   // freeFileSystem(root) ;
 
