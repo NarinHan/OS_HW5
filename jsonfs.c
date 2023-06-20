@@ -325,11 +325,42 @@ static int read_callback(const char * path, char * buf, size_t size, off_t offse
       return len - offset ;
     }
 
-    memcpy(buf, filecontent + offset, size) ;
+    // memcpy(buf, filecontent + offset, size) ;
+    memcpy(buf, "This is for test", size) ;
     return size ;
   }
 
   return -ENOENT ;
+}
+
+static int write_callback(const char * path, const char * buf, size_t size, off_t offset, struct fuse_file_info * fi)
+{
+    // Get the node corresponding to the path
+    FileSystemNode * node = getNodeFromPath(path) ;
+    if (node == NULL || node->type != REGULAR_FILE) {
+      return -ENOENT;
+    }
+
+    // Check if the file is open for writing
+    if ((fi->flags & O_ACCMODE) == O_RDONLY) {
+        return -EACCES ; // Read-only file
+    }
+
+    // Calculate the new size of the file after the write
+    size_t new_size = offset + size;
+    if (new_size > MAX_DATA_LENGTH) {
+        return -EFBIG; // File too large
+    }
+
+    // Write the data to the file
+    memcpy(node->data + offset, buf, size) ;
+    node->data[new_size] = '\0' ; // Null-terminate the data
+
+    // Update the file size in the file metadata
+    struct stat * stbuf = (struct stat *)fi->fh ;
+    stbuf->st_size = new_size ;
+
+    return size;
 }
 
 static struct fuse_operations fuse_example_operations = {
