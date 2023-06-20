@@ -167,10 +167,13 @@ FileSystemNode * json_to_ds (struct json_object * json)
         continue ;
       }
 
-      json_object* nameJson = json_object_object_get(entryJson, "name");
-      json_object* inodeJson = json_object_object_get(entryJson, "inode");
-      char * name = json_object_object_ex(entryJson, "name", &nameJson) ;    
-      int inode = json_object_object_ex(entryJson, "inode", &inodeJson) ;   
+      json_object* nameJson = NULL ;
+      json_object* inodeJson = NULL ;
+      json_object_object_get_ex(entryJson, "name", &nameJson);
+      json_object_object_get_ex(entryJson, "inode", &inodeJson);
+
+      char * name = json_object_get_string(nameJson) ;    
+      int inode = json_object_get_int(inodeJson) ;   
 
 
       if (nameJson == NULL || inodeJson == NULL) {
@@ -180,7 +183,7 @@ FileSystemNode * json_to_ds (struct json_object * json)
       FileSystemNode * child = nodeMap[inode] ;
       if (child != NULL) {
         // memcpy(child->name, name, strlen(name) + 1) ;
-        strncpy(child->name, name, sizeof(name)) ;
+        strncpy(child->name, name, strlen(name)) ;
         if (!child->visited && child != node) { // to prevent circular references
           addChild(node, child) ;
           child->visited = 1 ;
@@ -214,7 +217,7 @@ void print_fs (FileSystemNode * node, int depth) {
 void freeFileSystem (FileSystemNode* node) 
 {
   if (node != NULL) {
-    if (node->fileType == DIRECTORY) {
+    if (node->type == DIRECTORY) {
         FileSystemNode * child = node->firstChild ;
         while (child != NULL) {
             FileSystemNode * nextSibling = child->nextSibling;
