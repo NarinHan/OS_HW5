@@ -13,8 +13,6 @@
 #define MAX_NAME_LENGTH 50
 #define MAX_DATA_LENGTH 4098
 
-FileSystemNode * root ;
-
 typedef enum _FileType {
   DIRECTORY,
   REGULAR_FILE
@@ -30,6 +28,8 @@ typedef struct _FileSystemNode {
   struct _FileSystemNode * nextSibling ;
   int visited ;
 } FileSystemNode ;
+
+FileSystemNode * root ;
 
 FileSystemNode * createNode(int inode, FileType type, char * name, char * data)
 {
