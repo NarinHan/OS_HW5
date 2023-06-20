@@ -60,7 +60,7 @@ void addChild (FileSystemNode * parent, FileSystemNode * child)
   }
 }
 
-FileSystemNode * parseFileSystem (json_object * json)
+FileSystemNode * json_to_ds (json_object * json)
 {
   if (json == NULL || !json_object_is_type(json, json_type_array)) {
     return NULL ;
@@ -109,8 +109,7 @@ FileSystemNode * parseFileSystem (json_object * json)
     nodeMap[inode] = node ;
   }
 
-  for (int i = 0; i < n; i++)
-  {
+  for (int i = 0; i < n; i++) {
     FileSystemNode * node = nodeMap[i] ;
     if (node == NULL) {
       continue ;
@@ -175,7 +174,7 @@ void displayFileSystem(FileSystemNode *node, int depth)
   }
 }
 
-void freeFileSystem(FileSystemNode *node)
+void freeFileSystem (FileSystemNode * node)
 {
   if (node != NULL) {
     if (node->type == DIRECTORY) {
@@ -190,31 +189,64 @@ void freeFileSystem(FileSystemNode *node)
   }
 }
 
-void print_json(struct json_object *json)
+void print_json(struct json_object * json)
 {
-  int n = json_object_array_length(json);
+  int n = json_object_array_length(json) ;
 
-  for (int i = 0; i < n; i++)
-  {
-    struct json_object *obj = json_object_array_get_idx(json, i);
+  for (int i = 0; i < n; i++) {
+    struct json_object * obj = json_object_array_get_idx(json, i) ;
 
-    printf("{\n");
-    json_object_object_foreach(obj, key, val)
-    {
+    printf("{\n") ;
+    json_object_object_foreach(obj, key, val) {
       if (strcmp(key, "inode") == 0)
-        printf("   inode: %d\n", (int)json_object_get_int(val));
+        printf("   inode: %d\n", (int)json_object_get_int(val)) ;
 
       if (strcmp(key, "type") == 0)
-        printf("   type: %s\n", (char *)json_object_get_string(val));
+        printf("   type: %s\n", (char *)json_object_get_string(val)) ;
 
       if (strcmp(key, "name") == 0)
-        printf("   name: %s\n", (char *)json_object_get_string(val));
+        printf("   name: %s\n", (char *)json_object_get_string(val)) ;
 
       if (strcmp(key, "entries") == 0)
-        printf("   # entries: %d\n", json_object_array_length(val));
+        printf("   # entries: %d\n", json_object_array_length(val)) ;
     }
-    printf("}\n");
+    printf("}\n") ;
   }
+}
+
+FileSystemNode *getNodeFromPath(const char * path) 
+{
+  FileSystemNode *currentNode = root ;
+  if (path[0] == '/') {
+    path++ ;
+  }
+
+  char * token ;
+  char * rest = strdup(path) ;
+
+  while ((token = strtok_r(rest, "/", &rest))) {
+    if (currentNode->type != DIRECTORY) 
+      return NULL ;
+
+    FileSystemNode * child = currentNode->firstChild ;
+    int found = 0 ;
+
+    while (child != NULL) {
+      if (strcmp(child->name, token) == 0) {
+        found = 1 ;
+        break ;
+      }
+      child = child->nextSibling ;
+    }
+
+    if (!found) {
+      return NULL ;
+    }
+
+    currentNode = child ;
+  }
+
+  return currentNode ;
 }
 
 static const char *filecontent = "I'm the content of the only file available there\n";
@@ -222,74 +254,80 @@ static const char *filecontent = "I'm the content of the only file available the
 // reading metadata of a given path
 static int getattr_callback(const char *path, struct stat *stbuf)
 {
-  memset(stbuf, 0, sizeof(struct stat));
+  memset(stbuf, 0, sizeof(struct stat)) ;
 
-  if (strcmp(path, "/") == 0)
-  { // if path == root, declare it as a directory and return
-    stbuf->st_mode = S_IFDIR | 0755;
-    stbuf->st_nlink = 2;
-    return 0;
+  if (strcmp(path, "/") == 0) { // if path == root, declare it as a directory and return
+    stbuf->st_mode = S_IFDIR | 0755 ;
+    stbuf->st_nlink = 2 ;
+    return 0 ;
   }
 
-  // TODO : /file 수정해야함
-  if (strcmp(path, "/file") == 0)
-  { // if path == /file, declare it as a file and explicit its size and return
-    stbuf->st_mode = S_IFREG | 0777;
-    stbuf->st_nlink = 1;
-    stbuf->st_size = strlen(filecontent);
-    return 0;
+  FileSystemNode * node = getNodeFromPath(path) ;
+  if (node == NULL)
+    return -ENOENT ;
+  
+  if (node->type == REGULAR_FILE) {
+    stbuf->st_mode = S_IFREG | 0777 ; // declare it as a file
+    stbuf->st_nlink = 1 ;
+    stbuf->st_size = strlen(node->data) ; // explicit its size
+    return 0 ;
+  } else if (node->type == DIRECTORY) {
+    stbuf->st_mode = S_IFDIR | 0755 ;
+    stbuf->st_nlink = 2 ;
+    return 0 ;
   }
 
   return -ENOENT;
 }
 
 // telling FUSE the exact structure of the accessed directory
-static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
-                            off_t offset, struct fuse_file_info *fi)
+static int readdir_callback (const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
-
-  if (strcmp(path, "/") == 0)
-  {
-
+  if (strcmp(path, "/") == 0) {
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
-    filler(buf, "file", NULL, 0);
-    // TODO : "file" 대신 DS 로 filler 채워야 함
+
+    FileSystemNode * node = getNodeFromPath(path) ;
+    if (node == NULL || node->type != DIRECTORY) {
+      return -ENOENT ;
+    }
+
+    FileSystemNode * child = node->firstChild ;
+    while (child != NULL) {
+      filler(buf, child->name, NULL, 0) ;
+      child = child->nextSibling ;
+    }
+    
     return 0;
   }
 
-  return -ENOENT;
+  return -ENOENT ;
 }
 
-static int open_callback(const char *path, struct fuse_file_info *fi)
+static int open_callback (const char * path, struct fuse_file_info * fi)
 {
   return 0;
 }
 
 // reading data from an opened file
-static int read_callback(const char *path, char *buf, size_t size, off_t offset,
-                         struct fuse_file_info *fi)
+static int read_callback(const char * path, char * buf, size_t size, off_t offset, struct fuse_file_info * fi)
 {
-
-  if (strcmp(path, "/file") == 0)
-  {
+  if (strcmp(path, "/file") == 0) {
     size_t len = strlen(filecontent);
-    if (offset >= len)
-    {
+    if (offset >= len) {
       return 0;
     }
 
-    if (offset + size > len)
-    {
-      memcpy(buf, filecontent + offset, len - offset);
-      return len - offset;
+    if (offset + size > len) {
+      memcpy(buf, filecontent + offset, len - offset) ;
+      return len - offset ;
     }
 
-    memcpy(buf, filecontent + offset, size);
-    return size;
+    memcpy(buf, filecontent + offset, size) ;
+    return size ;
   }
 
-  return -ENOENT;
+  return -ENOENT ;
 }
 
 static struct fuse_operations fuse_example_operations = {
@@ -297,7 +335,7 @@ static struct fuse_operations fuse_example_operations = {
     .open = open_callback,
     .read = read_callback,
     .readdir = readdir_callback,
-};
+} ;
 
 int main(int argc, char *argv[])
 {
@@ -321,16 +359,16 @@ int main(int argc, char *argv[])
   //   return 1 ;
   // }
 
-  struct json_object *fs_json = json_object_from_file("fs.json");
+  struct json_object * fs_json = json_object_from_file("fs.json") ;
 
-  FileSystemNode *root = parseFileSystem(fs_json);
+  FileSystemNode * root = json_to_ds(fs_json) ;
 
   // print_json(fs_json) ;
-  json_object_put(fs_json);
+  json_object_put(fs_json) ;
 
-  displayFileSystem(root, 0);
+  displayFileSystem(root, 0) ;
 
-  // freeFileSystem(root) ;
+  freeFileSystem(root) ;
 
   return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }
