@@ -352,9 +352,6 @@ static struct fuse_operations fuse_example_operations = {
   .readdir = readdir_callback,
 };
 
-
-
-
 int main(int argc, char *argv[])
 {
   // char *filename = NULL ;
@@ -385,7 +382,7 @@ int main(int argc, char *argv[])
   // print_json(fs_json) ;
 	json_object_put(fs_json) ;
 
-  freeFileSystem(root) ;
+  // freeFileSystem(root) ;
 
 	return fuse_main(argc, argv, &fuse_example_operations, NULL) ;
 }
