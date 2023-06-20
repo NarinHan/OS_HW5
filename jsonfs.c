@@ -13,6 +13,8 @@
 #define MAX_NAME_LENGTH 50
 #define MAX_DATA_LENGTH 4098
 
+#define MOUNT_DIR "./mnt"
+
 typedef enum _FileType {
   DIRECTORY,
   REGULAR_FILE
@@ -334,32 +336,43 @@ static int read_callback(const char * path, char * buf, size_t size, off_t offse
 
 static int write_callback(const char * path, const char * buf, size_t size, off_t offset, struct fuse_file_info * fi)
 {
-    // Get the node corresponding to the path
+    // get the node corresponding to the path
     FileSystemNode * node = getNodeFromPath(path) ;
     if (node == NULL || node->type != REGULAR_FILE) {
       return -ENOENT;
     }
 
-    // Check if the file is open for writing
+    // check if the file is open for writing
     if ((fi->flags & O_ACCMODE) == O_RDONLY) {
         return -EACCES ; // Read-only file
     }
 
-    // Calculate the new size of the file after the write
+    // calculate the new size of the file after the write
     size_t new_size = offset + size;
     if (new_size > MAX_DATA_LENGTH) {
         return -EFBIG; // File too large
     }
 
-    // Write the data to the file
+    // write the data to the file
     memcpy(node->data + offset, buf, size) ;
     node->data[new_size] = '\0' ; // Null-terminate the data
 
-    // Update the file size in the file metadata
+    // update the file size in the file metadata
     struct stat * stbuf = (struct stat *)fi->fh ;
     stbuf->st_size = new_size ;
 
     return size;
+}
+
+static int create_callback(const char * path, mode_t mode, struct fuse_file_info * fi)
+{
+  FileSystemNode * newNode = createFileNode(path, mode) ;
+  if (newNode == NULL) 
+    return -ENOMEM ;
+  
+  fi->fh = (uintptr_t) newNode ;
+
+  return 0 ;
 }
 
 static struct fuse_operations fuse_example_operations = {
@@ -371,35 +384,39 @@ static struct fuse_operations fuse_example_operations = {
 
 int main(int argc, char *argv[])
 {
-  // char *filename = NULL ;
-  // if (argc < 2) {
-  //   printf("Name of a JSON file is required!\n") ;
-  //   return 1 ;
-  // } else {
-  //   filename = (char *)malloc(strlen(argv[1]) + 1) ;
-  //   if (filename == NULL) {
-  //     printf("Memory allocation failed.\n") ;
-  //     return 1 ;
-  //   }
-  //   memcpy(filename, argv[1], strlen(argv[1]) + 1) ;
-  // }
+  char *filename = NULL ;
+  if (argc < 2) {
+    printf("Name of a JSON file is required!\n") ;
+    return 1 ;
+  } else {
+    filename = (char *)malloc(strlen(argv[1]) + 1) ;
+    if (filename == NULL) {
+      printf("Memory allocation failed.\n") ;
+      return 1 ;
+    }
+    memcpy(filename, argv[1], strlen(argv[1]) + 1) ;
+  }
 
-  // struct json_object * fs_json = json_object_from_file(filename) ;
-  // if (fs_json == NULL) {
-  //   printf("Failed to load JSON file: %s\n", filename) ;
-  //   free(filename) ;
-  //   return 1 ;
-  // }
+  struct json_object * fs_json = json_object_from_file(filename) ;
+  if (fs_json == NULL) {
+    printf("Failed to load JSON file: %s\n", filename) ;
+    free(filename) ;
+    return 1 ;
+  }
 
-  struct json_object * fs_json = json_object_from_file("fs.json") ;
   root = json_to_ds(fs_json) ;
 
-  // print_json(fs_json) ;
   json_object_put(fs_json) ;
 
   displayFileSystem(root, 0) ;
 
+  int fuse_argc = 2 ;
+  char * fuse_argv[2] ;
+
+  fuse_argv[0] = argv[0] ;
+  fuse_argv[2] = MOUNT_DIR ;
+
   // freeFileSystem(root) ;
 
-  return fuse_main(argc, argv, &fuse_example_operations, NULL);
+  return fuse_main(fuse_argc, fuse_argv, &fuse_example_operations, NULL);
 }
