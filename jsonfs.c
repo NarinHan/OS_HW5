@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
   struct json_object * fs_json = json_object_from_file("fs.json") ; 
 
   FileSystemNode * root = json_to_ds(fs_json) ;
-  print_fs(fs, 0) ;
+  print_fs(root, 0) ;
 	
   // print_json(fs_json) ;
 	json_object_put(fs_json) ;
