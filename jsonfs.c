@@ -80,7 +80,7 @@ FileSystemNode * json_to_ds (json_object * json)
     json_object * inodeJson = NULL ;
     json_object * typeJson = NULL ;    
     json_object_object_get_ex(nodeJson, "inode", &inodeJson) ;
-    json_object_object_get_ex(nodeJson, "type", &typeJson) ;
+    json_object_object_get(nodeJson, "type", &typeJson) ;
 
     if (inodeJson == NULL || typeJson == NULL) {
       continue ;
@@ -314,19 +314,18 @@ static int open_callback (const char * path, struct fuse_file_info * fi)
 // reading data from an opened file
 static int read_callback(const char * path, char * buf, size_t size, off_t offset, struct fuse_file_info * fi)
 {
-  if (strcmp(path, "/file") == 0) {
-    size_t len = strlen(filecontent);
-    if (offset >= len) {
-      return 0;
-    }
+  FileSystemNode * node = getNodeFromPath(path) ;
+  if (node != NULL && node->type == REGULAR_FILE) {
+    size_t len = strlen(node->data) ;
+    if (offset >= len)
+      return 0 ;
 
     if (offset + size > len) {
-      memcpy(buf, filecontent + offset, len - offset) ;
+      memcpy(buf, node->data + offset, len - offset) ;
       return len - offset ;
     }
 
-    // memcpy(buf, filecontent + offset, size) ;
-    memcpy(buf, "This is for test", size) ;
+    memcpy(buf, node->data + offset, size) ;
     return size ;
   }
 
