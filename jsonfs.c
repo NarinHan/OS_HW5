@@ -23,6 +23,7 @@ typedef struct _FileSystemNode {
   FileType type ;
   char name[MAX_DATA_LENGTH] ;
   char data[MAX_DATA_LENGTH] ;
+  struct _FileSystemNode * parent ;
   struct _FileSystemNode * firstChild ;
   struct _FileSystemNode * nextSibling ;
 } FileSystemNode ;
@@ -40,6 +41,7 @@ FileSystemNode * createNode (int inode, FileType type, char * name, char * data)
     else {
       newNode->data[0] = "\0" ;
     }
+    newNode->parent = NULL ;
     newNode->firstChild = NULL ;
     newNode->nextSibling = NULL ;
   }
@@ -53,10 +55,10 @@ void addChild (FileSystemNode * parent, FileSystemNode * child)
     return ;
   }
 
+  child->parent = parent ;
   if (parent->firstChild == NULL) {
     parent->firstChild = child ;
-  }
-  else {
+  } else {
     FileSystemNode * sibling = parent->firstChild ;
     while (sibling->nextSibling != NULL) {
       sibling = sibling->nextSibling ;
@@ -234,34 +236,51 @@ void json_to_ds (struct json_object * json, FileSystemNode ** fs)
   }
 }
 
-void print_fs (FileSystemNode * fs, int level)
-{
-  if (fs == NULL)
-    return ;
+// Display the file system tree recursively
+void print_fs (FileSystemNode * fs, int depth) {
+  int i;
+  for (i = 0; i < depth; i++) {
+      printf("  ");
+  }
+  printf("|__%s\n", fs->name);
 
-  for (int i = 0; i < level; i++) {
-    printf("  ") ;
+  if (fs->type == DIRECTORY) {
+      FileSystemNode * child = fs->firstChild;
+      while (child != NULL) {
+          displayFileSystem(child, depth + 1);
+          child = child->nextSibling;
+      }
   }
-  printf("Inode: %d\n", fs->inode) ;
-  for (int i = 0; i < level; i++) {
-    printf("  ") ;
-  }
-  printf("Name: %s\n", fs->name) ;
-  for (int i = 0; i < level; i++) {
-    printf("  ") ;
-  }
-  printf("Type: %s\n", fs->type == DIRECTORY ? "Directory" : "Regular File") ;
-  if (fs->type == REGULAR_FILE) {
-    for (int i = 0; i < level; i++) {
-      printf("  ") ;
-    }
-    printf("Data: %s\n", fs->data) ;
-  }
-
-	// Print the children recursively
-  print_fs(fs->firstChild, level + 1) ;
-  print_fs(fs->nextSibling, level) ;
 }
+
+// void print_fs (FileSystemNode * fs, int level)
+// {
+//   if (fs == NULL)
+//     return ;
+
+//   for (int i = 0; i < level; i++) {
+//     printf("  ") ;
+//   }
+//   printf("Inode: %d\n", fs->inode) ;
+//   for (int i = 0; i < level; i++) {
+//     printf("  ") ;
+//   }
+//   printf("Name: %s\n", fs->name) ;
+//   for (int i = 0; i < level; i++) {
+//     printf("  ") ;
+//   }
+//   printf("Type: %s\n", fs->type == DIRECTORY ? "Directory" : "Regular File") ;
+//   if (fs->type == REGULAR_FILE) {
+//     for (int i = 0; i < level; i++) {
+//       printf("  ") ;
+//     }
+//     printf("Data: %s\n", fs->data) ;
+//   }
+
+// 	// Print the children recursively
+//   print_fs(fs->firstChild, level + 1) ;
+//   print_fs(fs->nextSibling, level) ;
+// }
 
 void print_json (struct json_object * json) 
 {
